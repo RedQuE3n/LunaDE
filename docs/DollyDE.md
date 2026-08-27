@@ -166,6 +166,10 @@ has taken. Hazard, not behaviour.
 
 ### 3.4 What Phase 0 has not settled
 
+**Superseded in part by §5**, which settled the first two of these and narrowed
+the third. Left standing as written, because §5 reads as an answer only if the
+question is still here.
+
 - **How panels get a surface role.** Avalonia.Wayland exposes xdg-shell
   toplevels and popups; the string `layer` does not appear in its public API.
   KWin advertises `zwlr_layer_shell_v1`, so the protocol is testable on this
@@ -211,3 +215,80 @@ they are recorded so the method is not repeated.
 
 **The rule both produce:** a check that reports absence must first prove it can
 report presence.
+
+---
+
+## 5. The panel surface — measured, 2026-08-27
+
+§3.4 left this as Phase 0's last open question: panels need a surface role
+Avalonia.Wayland does not expose, and the choice was between
+`zwlr_layer_shell_v1` and a DollyDE-private protocol. It was settled by asking a
+compositor rather than by argument.
+
+### 5.1 A correction to the package id, and the version gap that was not there
+
+NWayland 0.11.0's own README says to install **`NWayland.Protocol.Wlr`**,
+singular. **That id does not exist on nuget.org.** The real package is
+**`NWayland.Protocols.Wlr`**, plural. A search for the documented name returns
+nothing, which reads like the package is missing.
+
+The plan also recorded a version gap — `NWayland.Protocols.Wlr` at 0.12.5
+against the 0.11.0 that Avalonia.Wayland 12.1.0 depends on. **There is no gap.**
+0.11.0 of the protocol package exists and restores cleanly; 0.12.5 is merely the
+latest. `DollyDE.LayerShellProbe` pins 0.11.0 deliberately, because the shell
+will eventually want layer surfaces on the same connection Avalonia holds, and
+two NWayland versions in one process is a problem worth never having.
+
+### 5.2 A layer surface is drivable from C#
+
+`DollyDE.LayerShellProbe` connects, binds `wl_compositor` and
+`zwlr_layer_shell_v1`, creates a surface, requests a top-anchored full-width
+strip with an exclusive zone, commits without a buffer, and waits for the
+compositor to answer.
+
+Run against KDE / `kwin_wayland` on the development machine:
+
+    compositor advertises 68 globals
+    zwlr_layer_shell_v1 advertised at name=64 version=5
+
+    RESULT: layer surface configured by the compositor.
+      serial            : 37322
+      configured size   : 2560x32
+      requested height  : 32
+      exclusive zone    : 32
+
+2560 is the full width of the primary output, which is what anchoring left and
+right with a width of 0 asks for. The negotiation completed: configure received,
+acknowledged, committed.
+
+The bindings are complete — `ZwlrLayerShellV1` with `LayerEnum`
+(Background/Bottom/Top/Overlay), and `ZwlrLayerSurfaceV1` with `SetSize`,
+`SetAnchor`, `SetExclusiveZone`, `SetMargin`, `SetKeyboardInteractivity`,
+`AckConfigure` and `SetLayer`. The package also carries
+`zwlr_screencopy_manager_v1` and `zwlr_foreign_toplevel_manager_v1`.
+
+**That it worked against somebody else's compositor first is the useful part.**
+The finding is about the protocol and the bindings, not about a server we
+control and could have accidentally written to agree with us.
+
+### 5.3 What this does NOT prove — the remaining risk
+
+The probe drives layer-shell on **its own Wayland connection**. Avalonia holds a
+different one. Nothing here shows that **Avalonia can render into a layer
+surface**, and that is the actual requirement for a panel: the surface has to
+host LunaP content, not merely exist.
+
+Three ways that could go, none of them measured:
+
+- Get Avalonia to adopt a surface DollyDE created, which needs a seam into
+  `Avalonia.Wayland` internals that is not currently public.
+- Teach `Avalonia.Wayland` layer-shell upstream, which is the clean answer and
+  the slow one.
+- Draw panel content without Avalonia, which abandons LunaP for exactly the
+  surfaces the shell is mostly made of.
+
+**This is the shape of mistake §4.1 records**, so it is written down before it
+can be made again: the protocol works, and "the protocol works" is not "the
+panel works". The next measurement is a LunaP control rendering inside a layer
+surface, and until somebody takes it, the panel path is a hazard rather than a
+behaviour.

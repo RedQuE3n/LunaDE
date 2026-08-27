@@ -44,6 +44,20 @@ To see which Wayland protocols the backend actually binds:
     WAYLAND_DEBUG=1 dotnet run --project src/DollyDE.Shell -- --probe 2>&1 \
       | grep -oE '\.bind\([0-9]+, "[a-z_0-9]+"'
 
+## The layer-shell probe
+
+Phase 0's other question: can a panel surface be driven from C#? This asks the
+running compositor rather than arguing about it.
+
+    dotnet run --project src/DollyDE.LayerShellProbe
+
+It binds `zwlr_layer_shell_v1`, requests a top-anchored full-width strip with an
+exclusive zone, and reports the size the compositor configured. It draws
+nothing — see `docs/DollyDE.md` §5.3 for what that does and does not prove.
+
+Exit codes: `0` configured, `2` the compositor has no layer-shell, `3` no
+configure arrived within three seconds.
+
 ## Requirements
 
 .NET 10 SDK. On the Wayland path, `libwayland-client.so.0` and

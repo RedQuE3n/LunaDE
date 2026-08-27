@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The wlroots protocol family, layer-shell among it. Pinned to 0.11.0
+         DELIBERATELY: that is the NWayland version Avalonia.Wayland 12.1.0
+         depends on, and the shell will eventually drive layer surfaces on the
+         same connection Avalonia holds. Two NWayland versions in one process is
+         a problem worth never having.
+
+         NWayland 0.11.0's own README names this package "NWayland.Protocol.Wlr",
+         singular. That id does not exist on nuget.org. The real one is
+         "NWayland.Protocols.Wlr", plural - see docs/DollyDE.md §5.1. -->
+    <PackageReference Include="NWayland.Protocols.Wlr" Version="0.11.0" />
+  </ItemGroup>
+
+</Project>
