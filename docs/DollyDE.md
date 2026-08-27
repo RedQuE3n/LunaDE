@@ -292,3 +292,74 @@ can be made again: the protocol works, and "the protocol works" is not "the
 panel works". The next measurement is a LunaP control rendering inside a layer
 surface, and until somebody takes it, the panel path is a hazard rather than a
 behaviour.
+
+---
+
+## 6. Can Avalonia render into a layer surface? Not through any public API.
+
+§5.3 named this as the live risk and said the next measurement was a LunaP
+control drawn inside a layer surface. Before attempting it, the cheaper question
+was asked first: **is there a seam to attempt it through?** There is not.
+
+### 6.1 The measurement
+
+`Avalonia.Wayland` 12.1.0 contains **275 types and exports 8**:
+
+    Avalonia.AvaloniaWaylandPlatformExtensions   (UseWayland)
+    Avalonia.WaylandPlatformOptions
+    Avalonia.Wayland.AvaloniaWaylandException    (and five sibling exceptions)
+
+The other **267 are internal**, and they include every type that would matter:
+`WSurface`, `IWSurface`, `WXdgShellSurface`, `IWXdgShellSurface`, `WXdgTopLevel`,
+`WaylandTopLevelFactory`, `WaylandSurfaceCreateResult<T>`.
+
+`WaylandPlatformOptions` — the one public knob — carries `WlDisplayName`,
+`DisplayFd`, `EnableReconnects`, `ForceDrawnDecorations`, `GlProfiles`,
+`UseDmabufSwapchain`, `UseGLibMainLoop` and
+`ExternalGLibMainLoopExceptionLogger`. No surface factory, no role selection, no
+adoption hook. Searching every public member of all eight exported types for
+`Factory`, `Layer`, `Role` or `Surface` returns nothing.
+
+`InternalsVisibleTo` does not help either. The grants go to Avalonia's own test
+assemblies and to the XPF/WPF shims, and every one is strong-name signed, so a
+consumer cannot join the list.
+
+### 6.2 What that rules out, and what remains
+
+**Ruled out: surface adoption.** The plan's first candidate — DollyDE creates a
+`wl_surface`, gives it a layer role, and hands it to Avalonia to draw into —
+requires a public seam that does not exist. Reaching it by reflection would mean
+depending on 267 internal types across every future Avalonia release, which is
+not a foundation for a desktop environment.
+
+**Remaining, none of them measured:**
+
+1. **Upstream layer-shell support in `Avalonia.Wayland`.** The clean answer. The
+   repository is MIT and public, the backend already speaks xdg-shell, and a
+   layer-shell role is the same shape of work its `WXdgTopLevel` already does.
+   Slow, and it puts DollyDE's panel schedule behind somebody else's review.
+2. **Render offscreen and blit into a layer-surface buffer.** LunaP draws to a
+   bitmap; DollyDE copies it into a `wl_shm` or dmabuf buffer on the layer
+   surface it already knows how to create (§5.2). Keeps every LunaP control.
+   Costs a copy per frame and needs input forwarded back by hand — acceptable
+   for a 2560x32 panel, questionable for a full-screen lock surface.
+3. **Draw shell surfaces without Avalonia.** Abandons LunaP for exactly the
+   surfaces the shell is mostly made of, which defeats the reason LunaP is being
+   grown into a desktop toolkit at all.
+
+### 6.3 What this does to the plan
+
+Phase C assumed LunaP could grow shell surfaces as a toolkit feature. It cannot,
+not on its own: **the blocker is in Avalonia's backend, one layer below LunaP,
+and no amount of work inside LunaP reaches it.** LunaP's own rule — it references
+Avalonia and nothing else — is not the obstacle here and must not be blamed for
+it; the obstacle is that Avalonia.Wayland has no extension point for anyone.
+
+The LunaP seam is still worth building and is not blocked by any of this. It is
+what lets a host choose the windowing backend at all, and every route above
+needs it. It just does not, by itself, produce a panel.
+
+**Recorded as a hazard rather than a plan:** route 2 is the only one DollyDE can
+take unilaterally, and nobody has measured whether a blitted LunaP surface holds
+the frame budget or whether forwarded input feels right. Until somebody does,
+"panels are possible" is a belief.
