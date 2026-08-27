@@ -363,3 +363,122 @@ needs it. It just does not, by itself, produce a panel.
 take unilaterally, and nobody has measured whether a blitted LunaP surface holds
 the frame budget or whether forwarded input feels right. Until somebody does,
 "panels are possible" is a belief.
+
+---
+
+## 7. Building the Avalonia fork on Fedora
+
+§6.2 chose the fork. This is what it takes to compile it here, recorded because
+none of it is discoverable from the error messages and all four steps were found
+the hard way.
+
+The fork lives at `~/Projects/Avalonia`, branch `dollyde/layer-shell`, from
+`AvaloniaUI/Avalonia`. **The working tree carries no local modifications** -
+every accommodation below is a build flag or an environment variable, never an
+edit. That is deliberate: a change in the tree is a change that has to be
+explained to upstream later, and none of these belong there.
+
+### 7.1 The SDK is not available from the package manager
+
+`global.json` pins **10.0.201**. Fedora 44 ships **10.0.111** and that is the
+newest `dnf` has - `dnf check-update` reports nothing pending.
+
+Microsoft's Fedora repositories are empty. Checked across `fedora/44`,
+`fedora/42` and `fedora/41`: each returns the same ~612-byte stub `repomd.xml`
+with zero packages. And the release metadata for 10.0.400 lists **16 artifacts,
+none of them an rpm** - `tar.gz` for every Linux RID, `.pkg` for macOS,
+`.exe`/`.zip` for Windows. Microsoft no longer publishes distro packages for
+.NET.
+
+So the SDK comes from the tarball, installed per-user:
+
+    curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0
+    # installs to ~/.dotnet; build with ~/.dotnet/dotnet
+
+`global.json` already carries `rollForward: latestFeature`, so 10.0.400
+satisfies the 10.0.201 pin with **no edit to the file**. An earlier attempt
+lowered the pin instead; that was wrong and was reverted.
+
+### 7.2 Submodules are not optional
+
+XamlX and Avalonia.DBus are git submodules. Without them the build produces
+**126 errors**, all of them `CS0246: The type or namespace name 'XamlX' could
+not be found`, which reads like a broken checkout rather than a missing
+submodule.
+
+    git submodule update --init --recursive
+
+A `--depth 1 --filter=blob:none` clone does not bring them.
+
+### 7.3 Strong-name signing collides with Fedora's crypto policy
+
+.NET strong-name signing uses **SHA-1**, and it is not a choice - the digest is
+fixed by the format. Fedora's default crypto policy sets
+`rh-allow-sha1-signatures = no` in `/etc/crypto-policies/back-ends/opensslcnf.config`,
+so OpenSSL 3.5 refuses:
+
+    Interop+Crypto+OpenSslCryptographicException: error:03000098:
+    digital envelope routines::invalid digest
+
+**Turning signing off does not work.** `-p:SignAssembly=false` produces
+**298 errors**, beginning with `CS0538: 'IClickableControl' in explicit
+interface declaration is not an interface` - Avalonia's `InternalsVisibleTo`
+grants are keyed on strong names, so removing them removes the internals.
+
+The fix is a private OpenSSL config for the build process only:
+
+    sed 's/^rh-allow-sha1-signatures.*/rh-allow-sha1-signatures = yes/' \
+      /etc/crypto-policies/back-ends/opensslcnf.config > /tmp/os-sha1.config
+    sed "s#^\.include = /etc/crypto-policies/back-ends/opensslcnf.config#.include = /tmp/os-sha1.config#" \
+      /etc/pki/tls/openssl.cnf > /tmp/openssl-sha1.cnf
+    OPENSSL_CONF=/tmp/openssl-sha1.cnf ~/.dotnet/dotnet build ...
+
+Scoped to one process. **Do not** reach for
+`update-crypto-policies --set LEGACY`: it weakens every TLS decision on the
+machine, permanently, to fix one build. Note that .NET strong names are not a
+security boundary - .NET Core does not verify them - so the SHA-1 here is a
+legacy format constant rather than a trust decision. That is the whole argument
+for permitting it, and it does not extend to anything else.
+
+### 7.4 A failed signing run leaves a corrupt analyzer, and the error blames the wrong thing
+
+This one cost the most time and is worth the entry on its own.
+
+After the signing failure above, the build had written a **truncated
+`DevGenerators.dll`**. Every subsequent build then failed with:
+
+    error CS8795: Partial method 'KnownColors.GetKnownColors()' must have an
+    implementation part because it has accessibility modifiers.
+
+which points at `src/Avalonia.Base/Media/KnownColors.cs` and suggests a source
+problem. The real cause only appeared under `-v n`, as a **warning**:
+
+    warning CS8034: Unable to load Analyzer assembly .../DevGenerators.dll :
+    System.BadImageFormatException: PE image doesn't contain managed metadata.
+
+The generator could not load, so `[GenerateEnumValueDictionary]` emitted
+nothing, so the partial had no implementation. **The error and its cause were
+in different projects, and the cause was a warning while the symptom was an
+error.**
+
+Two rules from it. Fix signing before believing any other error in this tree.
+And when a generated member goes missing, check `-v n` for `CS8034` before
+reading the source at all - a clean `-t:Rebuild` after fixing signing produced
+66 generated files and a clean compile.
+
+### 7.5 The command that works, and the script that recreates it
+
+`tools/fedora-build-env.sh` does everything below and writes the OpenSSL config
+into `~/.config/dollyde/` rather than `/tmp`, because the `/tmp` copies from the
+first session did not survive to the second.
+
+    . tools/fedora-build-env.sh
+    $DOTNET build ~/Projects/Avalonia/src/Avalonia.Wayland/Avalonia.Wayland.csproj
+
+By hand:
+
+    OPENSSL_CONF=/tmp/openssl-sha1.cnf ~/.dotnet/dotnet build \
+      src/Avalonia.Wayland/Avalonia.Wayland.csproj -t:Rebuild
+
+Produces `Avalonia.Wayland.dll` for `net10.0` and `net8.0`. Verified
+2026-08-27.
