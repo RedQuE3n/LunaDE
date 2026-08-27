@@ -1,0 +1,11 @@
+bin/
+obj/
+*.user
+.vs/
+.idea/
+nupkgs/
+
+# Render captures and baselines are one machine's font rendering - worthless
+# elsewhere and misleading in a diff. Same rule as LunaP's.
+*.png
+*.frame

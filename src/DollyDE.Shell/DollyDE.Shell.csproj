@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Avalonia.Desktop is what carries UsePlatformDetect, and with it X11,
+         Skia and HarfBuzz. It is referenced for the FALLBACK path and for the
+         renderer, not for platform detection - see DollyApp.cs, which never
+         calls UsePlatformDetect.
+
+         Measured 2026-08-27: Avalonia.Desktop 12.1.0 depends on Avalonia.Native,
+         Avalonia, Avalonia.X11, Avalonia.HarfBuzz, Avalonia.Skia and
+         Avalonia.Win32 - and NOT on Avalonia.Wayland. That absence is the whole
+         reason UsePlatformDetect resolves to X11 on Linux, and the reason the
+         line below has to be written out by hand. -->
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+
+    <!-- The Wayland backend. Official: authors "Avalonia Team", repository
+         AvaloniaUI/Avalonia at commit a21b9f5, MIT. It is opt-in rather than
+         absent, which is the single fact this project's surface strategy rests
+         on. Pulls NWayland 0.11.0 for the protocol bindings. -->
+    <PackageReference Include="Avalonia.Wayland" Version="12.1.0" />
+
+    <!-- A theme has to be present or templated controls have no template,
+         render as nothing, and every visual assertion over them silently
+         passes. LunaP's docs/LunaP.md §3.1 records that failure mode - it was
+         produced by a harness that built its own theme. Not a decoration. -->
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project>
+
+  <!-- Settings shared by every project in this repository, so that two .csproj
+       files cannot drift into disagreeing about the target framework or the
+       language rules. DollyDE is a desktop environment: the shell, the core and
+       the tooling all run on the same runtime as each other, and a mismatch
+       would surface as a packaging problem long after it was introduced. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Warnings are errors because the first consumer of this code is a login
+         session. A warning nobody reads at build time becomes a black screen
+         somebody debugs from a TTY. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>
