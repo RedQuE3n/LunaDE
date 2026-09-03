@@ -364,19 +364,59 @@ take unilaterally, and nobody has measured whether a blitted LunaP surface holds
 the frame budget or whether forwarded input feels right. Until somebody does,
 "panels are possible" is a belief.
 
+### 6.4 The fork — decided before this was written, recorded 2026-09-02
+
+§7 opens by citing §6.2 as having chosen the fork. **§6.2 does not.** It lists
+upstreaming as route 1, calls it slow, and §6.3 then says route 2 is "the only
+one LunaDE can take unilaterally". Neither section contains the word fork, nor
+the reasoning that produced one. This subsection is what §7 should have cited.
+It is written late, after the fork already existed and had been built — the
+decision was acted on before it was recorded, which is the failure §4.1 exists
+to catch, repeated.
+
+**§6.3's claim was wrong, and this corrects it.** Route 2 is not the only route
+LunaDE can take unilaterally. It is the only one that requires no change to
+Avalonia, which is a different property. Route 1 was rejected on schedule, not
+on shape: the stated objection was that it "puts LunaDE's panel schedule behind
+somebody else's review". A fork removes the review from the critical path and
+leaves the upstream path open, so the schedule objection does not survive it,
+and route 1 becomes available on LunaDE's own clock.
+
+**Why route 1 over route 2.** The blit keeps every LunaP control but costs a
+copy per frame plus input forwarded by hand, and §6.3 recorded that neither had
+been measured. The fork pays a one-time cost inside a backend that already does
+this shape of work — `WXdgTopLevel` negotiates a role against a surface, and a
+layer surface is that same negotiation with different requests — and the result
+is usable by anyone, not only by LunaDE. It also attacks the actual blocker
+named in §6.3 rather than routing around it.
+
+**That upstreaming was always the intent is already evidenced in §7**, which
+keeps the fork's tree free of build accommodations on the grounds that "a change
+in the tree is a change that has to be explained to upstream later". That rule
+only makes sense if the branch is meant to become a pull request. The intent was
+real; it simply was not written down here.
+
+**What the fork does not settle.** It changes the open question rather than
+closing it. §5.3 asked whether Avalonia can render into a layer surface. That is
+still unanswered, and a fork is a route to an answer, not an answer. §7.6
+records how far it has actually got.
+
 ---
 
 ## 7. Building the Avalonia fork on Fedora
 
-§6.2 chose the fork. This is what it takes to compile it here, recorded because
-none of it is discoverable from the error messages and all four steps were found
-the hard way.
+§6.4 chose the fork and records why; this section was written first and
+originally cited §6.2, which chose nothing. What follows is what it takes to
+compile the fork here, recorded because none of it is discoverable from the
+error messages and all four steps were found the hard way.
 
 The fork lives at `~/Projects/Avalonia`, branch `lunade/layer-shell`, from
 `AvaloniaUI/Avalonia`. **The working tree carries no local modifications** -
 every accommodation below is a build flag or an environment variable, never an
 edit. That is deliberate: a change in the tree is a change that has to be
-explained to upstream later, and none of these belong there.
+explained to upstream later, and none of these belong there. That statement is
+about build accommodations and still holds; the branch itself has since gained a
+commit, recorded in §7.6.
 
 ### 7.1 The SDK is not available from the package manager
 
@@ -482,3 +522,30 @@ By hand:
 
 Produces `Avalonia.Wayland.dll` for `net10.0` and `net8.0`. Verified
 2026-08-27.
+
+### 7.6 The branch is no longer empty — 2026-09-02
+
+§7's preamble was written when `lunade/layer-shell` carried nothing but the
+upstream history. It now sits **one commit ahead of `origin/main` and zero
+behind**, at `eab8abf`, "Bind zwlr_layer_shell_v1 when the compositor offers
+it" — 21 insertions across three files:
+
+- `Directory.Packages.props` and `Avalonia.Wayland.csproj` add
+  `NWayland.Protocols.Wlr` **0.11.0**, pinned to the same NWayland version as
+  the base package. Same pin, same reason as §5.1: two NWayland versions in one
+  process is a problem worth never having, and here the process is Avalonia's.
+- `WaylandGlobals` binds `ZwlrLayerShellV1` across versions **1 through 5** and
+  exposes it as a nullable property alongside the other optional globals.
+  Nullable because the protocol never reached `wayland-protocols` upstream —
+  wlroots compositors and KWin implement it, Mutter does not — so every use has
+  to be guarded.
+
+The working tree is clean; the accommodations in §7.1–§7.5 remain flags and
+environment variables, not edits.
+
+**This is a binding, not a surface.** Nothing yet gives a `WSurface` a layer
+role, and the bind has not been observed succeeding on Avalonia's own
+connection — only `LunaDE.LayerShellProbe`'s, which is a different connection
+and was already known to work per §5.2. §5.3's rule is unchanged and applies
+here: the protocol working is not the panel working. **This entry records a
+commit, not a measurement.**
