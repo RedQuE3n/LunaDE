@@ -16,6 +16,28 @@ as `§`, and it keeps its own history rather than being tidied.
 **Phase 0.** Establishing that the Wayland path works before anything is built
 on it. It does — see `docs/LunaDE.md` §3.
 
+What Phase 0 also turned up, in the order it was found:
+
+- A layer surface — the Wayland role panels, docks, OSDs and lock screens need
+  — can be driven from C#. Measured against KWin, which configured a 2560x32
+  top-anchored strip with an exclusive zone. §5.2.
+- **Avalonia cannot render into one.** `Avalonia.Wayland` 12.1.0 holds 275
+  types and exports 8. Every type that would let a consumer supply or adopt a
+  surface is internal, and the `InternalsVisibleTo` grants are strong-name
+  signed, so a consumer cannot join them. There is no seam to build a panel
+  through. §6.
+- So the backend is being forked to teach it layer-shell, rather than worked
+  around. §6.4 records why that route over the alternatives, §7 what the fork
+  costs to build on Fedora. So far the branch binds `zwlr_layer_shell_v1` when
+  the compositor offers it, and nothing beyond that. §7.6.
+
+**Still open:** no LunaP content has been rendered into a layer surface by
+anyone. A bound global is not a panel, and until that measurement exists,
+panels are a plan rather than a capability.
+
+This repository builds against stock `Avalonia.Wayland` from NuGet. The fork is
+a separate tree and is not needed to build or run anything here.
+
 ## Building
 
     dotnet build LunaDE.slnx
