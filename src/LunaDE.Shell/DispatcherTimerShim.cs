@@ -1,6 +1,6 @@
 using Avalonia.Threading;
 
-namespace DollyDE.Shell;
+namespace LunaDE.Shell;
 
 // A one-shot timer on the UI thread.
 //

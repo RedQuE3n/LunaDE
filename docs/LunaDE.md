@@ -1,4 +1,4 @@
-# DollyDE — the design record
+# LunaDE — the design record
 
 This file keeps its own history rather than being tidied. Where it and the code
 disagree, **the code is the truth and this is the history**. A correction is a
@@ -9,7 +9,7 @@ Sections are numbered and cited from code as `§`.
 
 ---
 
-## 1. What DollyDE is, and who owns what
+## 1. What LunaDE is, and who owns what
 
 A desktop environment, not a distribution. Five languages, one job each:
 
@@ -33,13 +33,13 @@ impossible from a script. This is why the IPC spine is built before the shell.
 
 ## 2. Bootstrap: Wayland first, X11 fallback
 
-`DollyApp.Configure<TApp>()` is the one place the windowing backend is chosen,
+`ShellApp.Configure<TApp>()` is the one place the windowing backend is chosen,
 for the same reason LunaP keeps `LunaApp.Configure`: the alternative is the
 sequence spelled out in several entry points that eventually disagree, and a
 disagreement here is a session that starts on the wrong display server.
 
 The rule is **Wayland where available, X11 otherwise**, with a
-`DOLLYDE_BACKEND=wayland|x11` override for bisecting a fault across two display
+`LUNADE_BACKEND=wayland|x11` override for bisecting a fault across two display
 servers without a logout.
 
 ### 2.1 Why `UsePlatformDetect` is never called
@@ -74,7 +74,7 @@ Replacing `UsePlatformDetect()` with `UseWayland()` produced, in order:
 
 So platform detection selects a **windowing** subsystem *and* installs
 **rendering** and **text shaping**. Anything replacing that call inherits all
-three obligations. `DollyApp` therefore calls `.UseSkia().UseHarfBuzz()`
+three obligations. `ShellApp` therefore calls `.UseSkia().UseHarfBuzz()`
 explicitly.
 
 LunaP §35.2 records the same coupling from the other side: its `BootstrapTests`
@@ -90,7 +90,7 @@ The rule is "`WAYLAND_DISPLAY` is set", plus the override. It is deliberately
 The backend is installed on the builder in `Configure`, and only initialised
 later inside `Setup`. A failure therefore surfaces after `Configure` has
 returned and cannot be caught at that level. Recovering honestly needs a
-supervising process that restarts the shell with `DOLLYDE_BACKEND=x11` set.
+supervising process that restarts the shell with `LUNADE_BACKEND=x11` set.
 
 **That supervisor is not built.** A Wayland session whose compositor advertises
 a display but refuses the connection will fail to start rather than fall back.
@@ -113,8 +113,8 @@ than trusting what the bootstrap intended. Two independent readings agree.
 |---|---|---|
 | `UsePlatformDetect()` — LunaP §35.1 | `<UseX11>b__0_0` | not taken there |
 | `UsePlatformDetect().UseX11()` — LunaP §35.1 | `<UseX11>b__0_0` | not taken there |
-| `DollyApp.Configure<App>()`, Wayland session | **`<UseWayland>b__0_0`** | **`Avalonia.Wayland.WindowImpl`** |
-| `DOLLYDE_BACKEND=x11` | `<UseX11>b__0_0` | `Avalonia.X11.X11Window` |
+| `ShellApp.Configure<App>()`, Wayland session | **`<UseWayland>b__0_0`** | **`Avalonia.Wayland.WindowImpl`** |
+| `LUNADE_BACKEND=x11` | `<UseX11>b__0_0` | `Avalonia.X11.X11Window` |
 | `WAYLAND_DISPLAY` unset | `<UseX11>b__0_0` | `Avalonia.X11.X11Window` |
 
 **This retires LunaP §35.1's outstanding hazard.** That section said retiring it
@@ -122,7 +122,7 @@ honestly needed "a real window on a real Wayland session, on the Avalonia
 version in use". That window has now been opened, and it was a native Wayland
 window rather than an XWayland one.
 
-An unrecognised `DOLLYDE_BACKEND` value throws rather than falling through to a
+An unrecognised `LUNADE_BACKEND` value throws rather than falling through to a
 guess, because a typo that silently picks a backend is a typo nobody finds.
 
 ### 3.2 Protocols the Wayland backend binds
@@ -142,7 +142,7 @@ sanity control: `wl_compositor` must appear, and does.
 
 Notable in what is **absent**: no layer-shell, and no `ext_*` protocol at all.
 The workspace, foreign-toplevel, idle-notifier and screencopy protocols that the
-shell will need are DollyDE's to bind; Avalonia neither uses nor blocks them.
+shell will need are LunaDE's to bind; Avalonia neither uses nor blocks them.
 
 `wp_presentation` being bound is worth keeping in view — presentation-time
 feedback is the honest instrument for the compositor frame budget in §5.
@@ -180,7 +180,7 @@ question is still here.
   packages are at **0.12.5**.
 - **LunaP cannot reach any of this yet.** `LunaApp.Configure` hardcodes
   `UseX11()` on Linux (LunaP §3, §35.1). The toolkit needs a seam before the
-  shell can be built on it; `DollyApp` is deliberately a separate bootstrap
+  shell can be built on it; `ShellApp` is deliberately a separate bootstrap
   rather than a patch to LunaP, because LunaP must stay cross-platform and
   reference Avalonia and nothing else.
 
@@ -222,7 +222,7 @@ report presence.
 
 §3.4 left this as Phase 0's last open question: panels need a surface role
 Avalonia.Wayland does not expose, and the choice was between
-`zwlr_layer_shell_v1` and a DollyDE-private protocol. It was settled by asking a
+`zwlr_layer_shell_v1` and a LunaDE-private protocol. It was settled by asking a
 compositor rather than by argument.
 
 ### 5.1 A correction to the package id, and the version gap that was not there
@@ -235,13 +235,13 @@ nothing, which reads like the package is missing.
 The plan also recorded a version gap — `NWayland.Protocols.Wlr` at 0.12.5
 against the 0.11.0 that Avalonia.Wayland 12.1.0 depends on. **There is no gap.**
 0.11.0 of the protocol package exists and restores cleanly; 0.12.5 is merely the
-latest. `DollyDE.LayerShellProbe` pins 0.11.0 deliberately, because the shell
+latest. `LunaDE.LayerShellProbe` pins 0.11.0 deliberately, because the shell
 will eventually want layer surfaces on the same connection Avalonia holds, and
 two NWayland versions in one process is a problem worth never having.
 
 ### 5.2 A layer surface is drivable from C#
 
-`DollyDE.LayerShellProbe` connects, binds `wl_compositor` and
+`LunaDE.LayerShellProbe` connects, binds `wl_compositor` and
 `zwlr_layer_shell_v1`, creates a surface, requests a top-anchored full-width
 strip with an exclusive zone, commits without a buffer, and waits for the
 compositor to answer.
@@ -280,7 +280,7 @@ host LunaP content, not merely exist.
 
 Three ways that could go, none of them measured:
 
-- Get Avalonia to adopt a surface DollyDE created, which needs a seam into
+- Get Avalonia to adopt a surface LunaDE created, which needs a seam into
   `Avalonia.Wayland` internals that is not currently public.
 - Teach `Avalonia.Wayland` layer-shell upstream, which is the clean answer and
   the slow one.
@@ -326,7 +326,7 @@ consumer cannot join the list.
 
 ### 6.2 What that rules out, and what remains
 
-**Ruled out: surface adoption.** The plan's first candidate — DollyDE creates a
+**Ruled out: surface adoption.** The plan's first candidate — LunaDE creates a
 `wl_surface`, gives it a layer role, and hands it to Avalonia to draw into —
 requires a public seam that does not exist. Reaching it by reflection would mean
 depending on 267 internal types across every future Avalonia release, which is
@@ -337,9 +337,9 @@ not a foundation for a desktop environment.
 1. **Upstream layer-shell support in `Avalonia.Wayland`.** The clean answer. The
    repository is MIT and public, the backend already speaks xdg-shell, and a
    layer-shell role is the same shape of work its `WXdgTopLevel` already does.
-   Slow, and it puts DollyDE's panel schedule behind somebody else's review.
+   Slow, and it puts LunaDE's panel schedule behind somebody else's review.
 2. **Render offscreen and blit into a layer-surface buffer.** LunaP draws to a
-   bitmap; DollyDE copies it into a `wl_shm` or dmabuf buffer on the layer
+   bitmap; LunaDE copies it into a `wl_shm` or dmabuf buffer on the layer
    surface it already knows how to create (§5.2). Keeps every LunaP control.
    Costs a copy per frame and needs input forwarded back by hand — acceptable
    for a 2560x32 panel, questionable for a full-screen lock surface.
@@ -359,7 +359,7 @@ The LunaP seam is still worth building and is not blocked by any of this. It is
 what lets a host choose the windowing backend at all, and every route above
 needs it. It just does not, by itself, produce a panel.
 
-**Recorded as a hazard rather than a plan:** route 2 is the only one DollyDE can
+**Recorded as a hazard rather than a plan:** route 2 is the only one LunaDE can
 take unilaterally, and nobody has measured whether a blitted LunaP surface holds
 the frame budget or whether forwarded input feels right. Until somebody does,
 "panels are possible" is a belief.
@@ -372,7 +372,7 @@ the frame budget or whether forwarded input feels right. Until somebody does,
 none of it is discoverable from the error messages and all four steps were found
 the hard way.
 
-The fork lives at `~/Projects/Avalonia`, branch `dollyde/layer-shell`, from
+The fork lives at `~/Projects/Avalonia`, branch `lunade/layer-shell`, from
 `AvaloniaUI/Avalonia`. **The working tree carries no local modifications** -
 every accommodation below is a build flag or an environment variable, never an
 edit. That is deliberate: a change in the tree is a change that has to be
@@ -469,7 +469,7 @@ reading the source at all - a clean `-t:Rebuild` after fixing signing produced
 ### 7.5 The command that works, and the script that recreates it
 
 `tools/fedora-build-env.sh` does everything below and writes the OpenSSL config
-into `~/.config/dollyde/` rather than `/tmp`, because the `/tmp` copies from the
+into `~/.config/lunade/` rather than `/tmp`, because the `/tmp` copies from the
 first session did not survive to the second.
 
     . tools/fedora-build-env.sh

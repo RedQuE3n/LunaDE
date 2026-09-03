@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="src/DollyDE.Shell/DollyDE.Shell.csproj" />
-  <Project Path="src/DollyDE.LayerShellProbe/DollyDE.LayerShellProbe.csproj" />
-</Solution>

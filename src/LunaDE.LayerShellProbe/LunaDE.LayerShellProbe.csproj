@@ -13,7 +13,7 @@
 
          NWayland 0.11.0's own README names this package "NWayland.Protocol.Wlr",
          singular. That id does not exist on nuget.org. The real one is
-         "NWayland.Protocols.Wlr", plural - see docs/DollyDE.md §5.1. -->
+         "NWayland.Protocols.Wlr", plural - see docs/LunaDE.md §5.1. -->
     <PackageReference Include="NWayland.Protocols.Wlr" Version="0.11.0" />
   </ItemGroup>
 

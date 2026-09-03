@@ -1,14 +1,14 @@
 using NWayland.Protocols.Wayland;
 using NWayland.Protocols.Wlr.WlrLayerShellUnstableV1;
 
-namespace DollyDE.LayerShellProbe;
+namespace LunaDE.LayerShellProbe;
 
 // CAN C# DRIVE A PANEL SURFACE? Phase 0's last open question.
 //
 // The shell needs a surface role Avalonia.Wayland does not expose: something
 // that anchors to a screen edge, sits above ordinary windows, and reserves
 // space so maximised windows do not sit underneath it. zwlr_layer_shell_v1 is
-// the protocol that does that, and the alternative is DollyDE defining its own.
+// the protocol that does that, and the alternative is LunaDE defining its own.
 // Choosing between them on argument alone is how a plan acquires an assumption,
 // so this program asks the compositor instead.
 //
@@ -21,12 +21,12 @@ namespace DollyDE.LayerShellProbe;
 // for reasons that have nothing to do with the question.
 //
 // This runs against whatever compositor is present - KWin on the development
-// machine today, DollyDE's own Smithay compositor later. That it works on
+// machine today, LunaDE's own Smithay compositor later. That it works on
 // somebody else's compositor first is a feature: it means the finding is about
 // the protocol and the bindings rather than about our own server.
 internal static class Program
 {
-    private const string SurfaceNamespace = "dollyde-probe";
+    private const string SurfaceNamespace = "lunade-probe";
     private const uint PanelHeight = 32;
 
     private static int Main()
@@ -50,7 +50,7 @@ internal static class Program
         if (globals.LayerShell is not { } layerShellGlobal)
         {
             // A real answer, not a crash. A compositor without layer-shell is
-            // exactly the case the DollyDE-private-protocol option exists for.
+            // exactly the case the LunaDE-private-protocol option exists for.
             Console.WriteLine("RESULT: zwlr_layer_shell_v1 is NOT advertised by this compositor.");
             return 2;
         }

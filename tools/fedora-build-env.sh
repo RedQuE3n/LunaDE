@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Recreates what building the Avalonia fork needs on Fedora, and prints the
-# environment to use. See docs/DollyDE.md §7 for why each piece is required -
+# environment to use. See docs/LunaDE.md §7 for why each piece is required -
 # none of it is discoverable from the error messages.
 #
 # Source it:   . tools/fedora-build-env.sh
@@ -11,7 +11,7 @@
 # had to be reconstructed from the man page.
 set -u
 
-CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dollyde"
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/lunade"
 mkdir -p "$CONF_DIR"
 
 # .NET strong-name signing uses SHA-1; the digest is fixed by the format, not
@@ -45,6 +45,6 @@ fi
 echo "OPENSSL_CONF=$OPENSSL_CONF"
 echo "DOTNET=$DOTNET  ($($DOTNET --version 2>/dev/null || echo 'not runnable'))"
 echo
-echo "Avalonia fork: ~/Projects/Avalonia, branch dollyde/layer-shell"
+echo "Avalonia fork: ~/Projects/Avalonia, branch lunade/layer-shell"
 echo "Build:  \$DOTNET build src/Avalonia.Wayland/Avalonia.Wayland.csproj"
 echo "Submodules must be initialised: git submodule update --init --recursive"

@@ -1,10 +1,10 @@
 using Avalonia;
 
-namespace DollyDE.Shell;
+namespace LunaDE.Shell;
 
 // THE ONE PLACE THE WINDOWING BACKEND IS CHOSEN.
 //
-// DollyDE is Wayland-first and falls back to X11. That ordering is a decision
+// LunaDE is Wayland-first and falls back to X11. That ordering is a decision
 // rather than a default, and this is the only file allowed to express it, for
 // the same reason LunaP keeps LunaApp.Configure: the alternative is the
 // sequence spelled out in several entry points that eventually disagree, and a
@@ -25,13 +25,13 @@ namespace DollyDE.Shell;
 // method has returned and cannot be caught at this level. Recovering from that
 // honestly needs a supervising process that restarts the shell with the
 // override set. That is not built, and saying so is the point - see
-// docs/DollyDE.md §2.
-public static class DollyApp
+// docs/LunaDE.md §2.
+public static class ShellApp
 {
-    // Set DOLLYDE_BACKEND=x11 or =wayland to override the rule below. This
+    // Set LUNADE_BACKEND=x11 or =wayland to override the rule below. This
     // exists for bisecting a rendering fault across two display servers on one
     // machine, which is otherwise a logout and a login.
-    private const string BackendOverrideVariable = "DOLLYDE_BACKEND";
+    private const string BackendOverrideVariable = "LUNADE_BACKEND";
 
     /// <summary>The Avalonia bootstrap sequence: Wayland where available, X11 otherwise.</summary>
     /// <typeparam name="TApp">Your Application type, constructed by Avalonia.</typeparam>
@@ -99,7 +99,7 @@ public static class DollyApp
     }
 }
 
-/// <summary>The windowing backend DollyDE will ask Avalonia for.</summary>
+/// <summary>The windowing backend LunaDE will ask Avalonia for.</summary>
 public enum Backend
 {
     /// <summary>Wayland, via Avalonia.Wayland. The default on a Wayland session.</summary>

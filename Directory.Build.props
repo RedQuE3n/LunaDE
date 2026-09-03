@@ -2,7 +2,7 @@
 
   <!-- Settings shared by every project in this repository, so that two .csproj
        files cannot drift into disagreeing about the target framework or the
-       language rules. DollyDE is a desktop environment: the shell, the core and
+       language rules. LunaDE is a desktop environment: the shell, the core and
        the tooling all run on the same runtime as each other, and a mismatch
        would surface as a packaging problem long after it was introduced. -->
   <PropertyGroup>

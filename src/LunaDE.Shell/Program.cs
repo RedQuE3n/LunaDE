@@ -1,13 +1,13 @@
 using Avalonia;
 
-namespace DollyDE.Shell;
+namespace LunaDE.Shell;
 
 // PHASE 0 ENTRY POINT.
 //
 // `dotnet run` opens the probe window and leaves it open. `dotnet run -- --probe`
 // opens it, reads the backend report once the compositor has had a chance to
 // speak, prints it to stdout and exits. The second form is the one that
-// produces a number worth writing into docs/DollyDE.md, because it terminates:
+// produces a number worth writing into docs/LunaDE.md, because it terminates:
 // a measurement that needs a human to close a window is a measurement that will
 // not be taken twice.
 //
@@ -21,7 +21,7 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        var builder = DollyApp.Configure<App>();
+        var builder = ShellApp.Configure<App>();
 
         // Handed over as statics because Avalonia constructs the Application
         // itself - Configure<TApp> requires a parameterless constructor, so

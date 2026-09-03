@@ -3,13 +3,13 @@ using System.Text;
 using Avalonia;
 using Avalonia.Controls;
 
-namespace DollyDE.Shell;
+namespace LunaDE.Shell;
 
 // WHAT ACTUALLY GOT SELECTED, ASKED OF THE OBJECTS THEMSELVES.
 //
 // The reason this class exists rather than a log line saying "using Wayland":
 // a bootstrap that INTENDS to select a backend and a process that IS running on
-// one are different claims, and only the second is worth anything. DollyApp
+// one are different claims, and only the second is worth anything. ShellApp
 // decides; this reads back what the decision produced. When the two disagree,
 // the disagreement is the finding.
 //
@@ -96,10 +96,10 @@ public static class BackendReport
     /// <returns>A multi-line report.</returns>
     public static string Compose(AppBuilder builder, Window? window)
     {
-        var (backend, reason) = DollyApp.Decide();
+        var (backend, reason) = ShellApp.Decide();
         var sb = new StringBuilder();
 
-        sb.AppendLine("DollyDE backend report");
+        sb.AppendLine("LunaDE backend report");
         sb.AppendLine("======================");
         sb.AppendLine();
         sb.AppendLine("Decision");

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/LunaDE.Shell/LunaDE.Shell.csproj" />
+  <Project Path="src/LunaDE.LayerShellProbe/LunaDE.LayerShellProbe.csproj" />
+</Solution>

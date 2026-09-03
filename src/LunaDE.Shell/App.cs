@@ -5,7 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Themes.Fluent;
 
-namespace DollyDE.Shell;
+namespace LunaDE.Shell;
 
 // The Phase 0 application: one window, no XAML, no theme of our own.
 //
@@ -70,7 +70,7 @@ public sealed class App : Application
     {
         var text = new TextBlock
         {
-            Text = "DollyDE Phase 0 probe",
+            Text = "LunaDE Phase 0 probe",
             FontSize = 20,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
@@ -84,7 +84,7 @@ public sealed class App : Application
 
         return new Window
         {
-            Title = "DollyDE Phase 0 probe",
+            Title = "LunaDE Phase 0 probe",
             Width = 480,
             Height = 200,
             Background = Brushes.Transparent,

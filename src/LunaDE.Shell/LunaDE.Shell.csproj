@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- Avalonia.Desktop is what carries UsePlatformDetect, and with it X11,
          Skia and HarfBuzz. It is referenced for the FALLBACK path and for the
-         renderer, not for platform detection - see DollyApp.cs, which never
+         renderer, not for platform detection - see ShellApp.cs, which never
          calls UsePlatformDetect.
 
          Measured 2026-08-27: Avalonia.Desktop 12.1.0 depends on Avalonia.Native,
